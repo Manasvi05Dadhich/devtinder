@@ -50,8 +50,25 @@ app.get('/feed', async (req, res)=> {//get all users
 
 })
 
-app.delete('/delete',(req, res) => {
-    
+app.delete('/user',async (req, res) => { //delete a user
+    const userID = req.body.userID;
+    try {
+        const users = await User.findByIdAndDelete(userID);
+        res.send('user deleted successfully');        
+    } catch (err) {
+        console.log(err);
+        res.send(err.message);
+    }
+})
+
+app.patch('/user', async (req, res)=>{
+    const updateUser = req.body
+    try {
+        
+    } catch (err) {
+        console.log(err);
+        res.send(err.message);
+    }
 })
 
 
