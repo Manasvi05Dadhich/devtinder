@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const bcrypt = require('bcrypt')
+const bcrypt= require('bcrypt')
 
 const userSchema = new mongoose.Schema(
   {
@@ -19,13 +19,7 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: true,
       trim: true,
-      lowercase: true,
-      validate: {
-        validator: function (v) {
-          return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-        },
-        message: 'Please enter a valid email address'
-      }
+      lowercase: true
     },
 
     password: {
@@ -52,37 +46,39 @@ const userSchema = new mongoose.Schema(
 
     photoUrl: {
       type: String
-    }
+    },
+    
+    resetPasswordToken: {
+     type: String,
+      default: null
+},
+
+    resetPasswordExpires: {
+      type: Date,
+      default: null
+}  
   },
   {
     timestamps: true
   }
 );
 
-// Hash password before saving
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) {
-    return next();
-  }
+userSchema.pre('save', async function (next){
+   if(!this.isModified('password')){
+     next();
+   }
+   try {
+     const salt = bcrypt.genSalt(10);
+     this.password =await bcrypt.hash(this.password, salt);
+     next();
+   } catch (error) {
+      next();
+   }
+})
 
-  try {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-    return next();
-  } catch (error) {
-    return next(error);
-  }
-});
-
-// Method to compare password for login
-userSchema.methods.comparePassword = async function (candidatePassword) {
-  try {
-    return await bcrypt.compare(candidatePassword, this.password);
-  } catch (error) {
-    throw new Error('Error comparing passwords');
-  }
+userSchema.methods.comparePassword = async function (enteredPassword) {
+  return bcrypt.compare(enteredPassword, this.password);
 };
 
 const User = mongoose.model('User', userSchema);
-
 module.exports = User;
