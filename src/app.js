@@ -10,6 +10,10 @@ require('dotenv').config();
 app.use(express.json());
 app.use(cookieParser());
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'Server is running! 🚀', timestamp: new Date() });
+});
 
 connectDB();
 
@@ -41,11 +45,14 @@ app.post('/signup', async (req, res) => {
     await userObj.save();
     res.status(201).json({ message: 'User created successfully', userId: userObj._id });
   } catch (err) {
-    console.error('Signup error:', err);
+    console.error('Signup error:', err.message);
     if (err.name === 'ValidationError') {
       return res.status(400).json({ error: err.message });
     }
-    res.status(500).json({ error: 'Internal server error' });
+    if (err.message.includes('connected')) {
+      return res.status(503).json({ error: 'Database connection failed. Please ensure MongoDB is properly configured.' });
+    }
+    res.status(500).json({ error: 'Internal server error', details: err.message });
   }
 });
 
